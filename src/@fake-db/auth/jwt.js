@@ -1,6 +1,7 @@
 // ** JWT import
 import jwt from 'jsonwebtoken'
 import { X_API_KEY, API_BACKEND } from 'src/@fake-db/api/api'
+
 // ** Mock Adapter
 import mock from 'src/@fake-db/mock'
 
@@ -48,6 +49,7 @@ mock.onPost('/jwt/login').reply(async request => {
     body: JSON.stringify({ email, password })
   })
   const user = await data.json()
+
   // console.log(user.data)
 
   if (user.data) {
@@ -117,6 +119,7 @@ mock.onGet('/auth/me').reply(async config => {
 
   // ** Default response
   let response = [200, {}]
+
   const dataProfile = await fetch(`${API_BACKEND}user/me`, {
     method: 'GET',
     headers: {
@@ -153,5 +156,6 @@ mock.onGet('/jwt/logout').reply(async config => {
     }
   })
   const user = await data.json()
+
   return [200, user]
 })

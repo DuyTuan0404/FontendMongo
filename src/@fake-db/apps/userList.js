@@ -809,28 +809,31 @@ mock.onPost('/apps/users/add-user').reply(config => {
 })
 
 // GET: DATA
-mock.onGet('/apps/users/list').reply(config => {
+mock.onGet('/apps/users/list').reply(async config => {
   const { q = '', role = null, status = null, currentPlan = null } = config.params ?? ''
   const queryLowered = q.toLowerCase()
 
-  const filteredData = data.users.filter(
-    user =>
-      (user.username.toLowerCase().includes(queryLowered) ||
-        user.fullName.toLowerCase().includes(queryLowered) ||
-        user.role.toLowerCase().includes(queryLowered) ||
-        (user.email.toLowerCase().includes(queryLowered) &&
-          user.currentPlan.toLowerCase().includes(queryLowered) &&
-          user.status.toLowerCase().includes(queryLowered))) &&
-      user.role === (role || user.role) &&
-      user.currentPlan === (currentPlan || user.currentPlan) &&
-      user.status === (status || user.status)
-  )
+  const token = config.headers.Authorization
+  const user_id = config.headers.userId
+
+  // // ** Default response
+  const dataProfile = await fetch(`${API_BACKEND}user/admin/employee`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'x-api-key': X_API_KEY,
+      'x-client-id': user_id,
+      'authorization-v2': token
+    }
+  })
+
+  const users = await dataProfile.json()
 
   return [
     200,
     {
-      allData: data.users,
-      users: filteredData,
+      allData: users.data.users,
+      users: users.data.users,
       params: config.params,
       total: filteredData.length
     }
