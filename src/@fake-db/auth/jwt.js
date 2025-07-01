@@ -131,10 +131,9 @@ mock.onGet('/auth/me').reply(async config => {
   })
 
   const user = await dataProfile.json()
-
   if (user.data) {
     window.localStorage.setItem(defaultAuthConfig.storageTokenKeyName, token)
-    response = [200, { userData: user.data }]
+    response = [200, { userData: { ...user.data, role: 'admin' } }]
   } else {
     response = [401, { error: { error: 'Invalid User' } }]
   }

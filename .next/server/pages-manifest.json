@@ -2,5 +2,8 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/apps/user/list": "pages/apps/user/list.js"
+  "/login": "pages/login.js",
+  "/": "pages/index.js",
+  "/apps/user/list": "pages/apps/user/list.js",
+  "/dashboards/analytics": "pages/dashboards/analytics.js"
 }
