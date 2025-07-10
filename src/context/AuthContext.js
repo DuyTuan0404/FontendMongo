@@ -47,16 +47,16 @@ const AuthProvider = ({ children }) => {
             setLoading(false)
             setUser({ ...response.data.userData })
           })
-          .catch(() => {
-            localStorage.removeItem('userData')
-            localStorage.removeItem('refreshToken')
-            localStorage.removeItem('accessToken')
-            setUser(null)
-            setLoading(false)
-            if (authConfig.onTokenExpiration === 'logout' && !router.pathname.includes('login')) {
-              router.replace('/login')
-            }
-          })
+          // .catch(() => {
+          //   localStorage.removeItem('userData')
+          //   localStorage.removeItem('refreshToken')
+          //   localStorage.removeItem('accessToken')
+          //   setUser(null)
+          //   setLoading(false)
+          //   if (authConfig.onTokenExpiration === 'logout' && !router.pathname.includes('login')) {
+          //     router.replace('/login')
+          //   }
+          // })
       } else {
         setLoading(false)
       }
@@ -69,6 +69,8 @@ const AuthProvider = ({ children }) => {
     axios
       .post(authConfig.loginEndpoint, params)
       .then(async response => {
+        console.log(router.query);
+
         params.rememberMe
           ? window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
           : null

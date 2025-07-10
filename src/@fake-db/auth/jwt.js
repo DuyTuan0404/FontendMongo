@@ -1,6 +1,7 @@
 // ** JWT import
 import jwt from 'jsonwebtoken'
 import { X_API_KEY, API_BACKEND } from 'src/@fake-db/api/api'
+import axios from 'src/utils/myAxios'
 
 // ** Mock Adapter
 import mock from 'src/@fake-db/mock'
@@ -40,34 +41,30 @@ mock.onPost('/jwt/login').reply(async request => {
     email: ['Có gì đó đã sai']
   }
 
-  const data = await fetch(`${API_BACKEND}auth/signin`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'x-api-key': X_API_KEY
-    },
-    body: JSON.stringify({ email, password })
-  })
-  const user = await data.json()
+  try {
+    const { data: user } = await axios.post(`auth/signin`, { email, password })
+    console.log('user:: ', user);
 
-  // console.log(user.data)
+    if (user.data) {
+      const accessToken = user.data.tokens.accessToken
+      const refreshToken = user.data.tokens.refreshToken
+      console.log('user.data:: ', user.data.user);
 
-  if (user.data) {
-    const accessToken = user.data.tokens.accessToken
-    const refreshToken = user.data.tokens.refreshToken
+      const response = {
+        accessToken,
+        refreshToken,
+        userData: { ...user.data.user }
+      }
 
-    const response = {
-      accessToken,
-      refreshToken,
-      userData: { ...user.data.user }
+      return [200, response]
+    } else {
+      error = {
+        email: [user.error.message]
+      }
+
+      return [400, { error }]
     }
-
-    return [200, response]
-  } else {
-    error = {
-      email: [user.error.message]
-    }
-
+  } catch (err) {
     return [400, { error }]
   }
 })
@@ -120,41 +117,36 @@ mock.onGet('/auth/me').reply(async config => {
   // ** Default response
   let response = [200, {}]
 
-  const dataProfile = await fetch(`${API_BACKEND}user/me`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'x-api-key': X_API_KEY,
-      'x-client-id': user_id,
-      'authorization-v2': token
+  try {
+    const user = await axios.get(`user/me`)
+    console.log(user);
+
+    if (user.data) {
+      window.localStorage.setItem(defaultAuthConfig.storageTokenKeyName, token)
+      response = [200, { userData: { ...user.data, role: 'admin' } }]
+    } else {
+      response = [401, { error: { error: 'Invalid User' } }]
     }
-  })
-
-  const user = await dataProfile.json()
-  if (user.data) {
-    window.localStorage.setItem(defaultAuthConfig.storageTokenKeyName, token)
-    response = [200, { userData: { ...user.data, role: 'admin' } }]
-  } else {
+    return response
+  } catch (err) {
     response = [401, { error: { error: 'Invalid User' } }]
+    return response
   }
-
-  return response
 })
 
 mock.onGet('/jwt/logout').reply(async config => {
   const token = config.headers.Authorization
   const user_id = config.headers.userId
 
-  const data = await fetch(`${API_BACKEND}auth/logout`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'x-api-key': X_API_KEY,
-      'x-client-id': user_id,
-      'authorization-v2': token
-    }
-  })
-  const user = await data.json()
-
-  return [200, user]
+  try {
+    const { data: user } = await axios.get(`${API_BACKEND}auth/logout`, {
+      headers: {
+        'x-client-id': user_id,
+        'authorization-v2': token
+      }
+    })
+    return [200, user]
+  } catch (err) {
+    return [200, { error: 'Logout failed' }]
+  }
 })

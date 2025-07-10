@@ -260,15 +260,19 @@ const UserList = ({ apiData }) => {
   const dispatch = useDispatch()
   const store = useSelector(state => state.user)
   useEffect(() => {
+    console.log(store);
+
     dispatch(
       fetchData({
         role,
         status,
-        q: value,
-        currentPlan: plan
+        keyword: value,
+        currentPlan: plan,
+        page: paginationModel.page + 1, // backend thường bắt đầu từ 1
+        limit: paginationModel.pageSize
       })
     )
-  }, [dispatch, plan, role, status, value])
+  }, [dispatch, plan, role, status, value, paginationModel])
 
   const handleFilter = useCallback(val => {
     setValue(val)
@@ -307,7 +311,7 @@ const UserList = ({ apiData }) => {
           <CardHeader title='Search Filters' />
           <CardContent>
             <Grid container spacing={6}>
-              <Grid item sm={4} xs={12}>
+              {/* <Grid item sm={4} xs={12}>
                 <CustomTextField
                   select
                   fullWidth
@@ -325,7 +329,7 @@ const UserList = ({ apiData }) => {
                   <MenuItem value='maintainer'>Maintainer</MenuItem>
                   <MenuItem value='subscriber'>Subscriber</MenuItem>
                 </CustomTextField>
-              </Grid>
+              </Grid> */}
               <Grid item sm={4} xs={12}>
                 <CustomTextField
                   select
@@ -371,9 +375,11 @@ const UserList = ({ apiData }) => {
             rows={store.data}
             columns={columns}
             disableRowSelectionOnClick
-            pageSizeOptions={[10, 25, 50]}
+            pageSizeOptions={[1, 10, 15]}
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            rowCount={store.total}
+            paginationMode="server"
           />
         </Card>
       </Grid>

@@ -1,5 +1,6 @@
 // ** Mock
 import mock from 'src/@fake-db/mock'
+import axios from 'src/utils/myAxios'
 
 const data = {
   users: [
@@ -810,27 +811,32 @@ mock.onPost('/apps/users/add-user').reply(config => {
 
 // GET: DATA
 mock.onGet('/apps/users/list').reply(async config => {
-  const { q = '', role = null, status = null, currentPlan = null } = config.params ?? ''
-  const queryLowered = q.toLowerCase()
+  const { keyword = '', status = null, currentPlan = null, page = 1, limit = 10 } = config.params ?? {}
 
-  const token = config.headers.Authorization
-  const user_id = config.headers.userId
+const { data: user } = await axios.get(`user/super-admin`, {
+  params: {
+    keyword,
+    status,
+    currentPlan,
+    page,
+    limit
+  }
+})
 
-  // // ** Default response
-  const dataProfile = await fetch(`${API_BACKEND}user/admin/employee`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'x-api-key': X_API_KEY,
-      'x-client-id': user_id,
-      'authorization-v2': token
-    }
-  })
-
-  const users = await dataProfile.json()
-
+if (user.data) {
+  let userData = user.data;
   return [
     200,
+    {
+      allData:userData.users,
+      users: userData.users,
+      params: config.params,
+      total: userData.total
+    }
+  ]
+}else{
+  [
+    400,
     {
       allData: users.data.users,
       users: users.data.users,
@@ -838,6 +844,22 @@ mock.onGet('/apps/users/list').reply(async config => {
       total: filteredData.length
     }
   ]
+}
+
+  // // ** Default response
+  // const dataProfile = await fetch(`${API_BACKEND}user/admin/employee`, {
+  //   method: 'GET',
+  //   headers: {
+  //     'Content-Type': 'application/json; charset=utf-8',
+  //     'x-api-key': X_API_KEY,
+  //     'x-client-id': user_id,
+  //     'authorization-v2': token
+  //   }
+  // })
+
+  // const users = await dataProfile.json()
+
+
 })
 
 // DELETE: Deletes User
