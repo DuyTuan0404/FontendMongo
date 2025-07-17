@@ -1,4 +1,4 @@
-// ** React Imports
+
 import { useState, useEffect } from 'react'
 
 // ** MUI Imports
@@ -47,50 +47,73 @@ const Header = styled(Box)(({ theme }) => ({
   justifyContent: 'space-between'
 }))
 
-const schema = yup.object().shape({
-  company: yup.string().required(),
-  billing: yup.string().required(),
-  country: yup.string().required(),
-  email: yup.string().email().required(),
-  contact: yup
-    .number()
-    .typeError('Contact Number field is required')
-    .min(10, obj => showErrors('Contact Number', obj.value.length, obj.min))
-    .required(),
-  fullName: yup
-    .string()
-    .min(3, obj => showErrors('First Name', obj.value.length, obj.min))
-    .required(),
-  username: yup
-    .string()
-    .min(3, obj => showErrors('Username', obj.value.length, obj.min))
-    .required()
-})
 
-const defaultValues = {
-  email: '',
-  company: '',
-  country: '',
-  billing: '',
-  fullName: '',
-  username: '',
-  contact: Number('')
-}
 
-const SidebarAddUser = props => {
+const UserDrawer = props => {
   // ** Props
-  const { open, toggle, user } = props
+  const { open, toggle, user, mode = 'add', onSubmit: onSubmitProp } = props
 
   // ** State
-  const [plan, setPlan] = useState('basic')
-  const [role, setRole] = useState('subscriber')
+  const [plan, setPlan] = useState(user?.currentPlan || 'basic')
+  const [role, setRole] = useState(user?.role || 'subscriber')
   const [avatarInputType, setAvatarInputType] = useState('upload') // 'upload' | 'imageLink' | 'videoLink'
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [avatarError, setAvatarError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
+
 
   // ** Hooks
   const dispatch = useDispatch()
   const store = useSelector(state => state.user)
+
+  // Nếu là edit, lấy defaultValues từ user, nếu không thì dùng defaultValues mặc định
+  const isEdit = mode === 'edit'
+  const schema = yup.object().shape({
+    company: yup.string().required(),
+    billing: yup.string().required(),
+    email: yup.string().email().required(),
+    msisdn: yup
+      .string()
+      .required('Phone is required')
+      .matches(/^\d{10,12}$/, 'Phone must be from 10 to 12 digits'),
+    fullName: yup
+      .string()
+      .min(3, obj => showErrors('First Name', obj.value.length, obj.min))
+      .required(),
+    username: yup
+      .string()
+      .min(3, obj => showErrors('Username', obj.value.length, obj.min))
+      .required(),
+      ...(isEdit
+        ? {}
+        : {
+            password: yup
+              .string()
+              .min(6, 'Password must be at least 6 characters')
+              .required('Password is required'),
+            passwordConfirm: yup
+              .string()
+              .oneOf([yup.ref('password'), null], 'Passwords must match')
+              .required('Please confirm your password')
+          })
+  })
+
+  const defaultValues = {
+    email: 'tuantruong@gmail.com',
+    company: 'tuan truongtruong',
+    billing: 'Auto Debit',
+    fullName: 'tuan truongtruong',
+    username: 'tuan truongtruong',
+    name: 'tuan truongtruong',
+    note: 'tuan truongtruong',
+    msisdn: '091915743',
+    ...(isEdit ? {} : {
+      password: '12345678',
+      passwordConfirm: '12345678'
+    })
+  }
+
 
   const {
     reset,
@@ -101,30 +124,62 @@ const SidebarAddUser = props => {
     formState: { errors },
     watch
   } = useForm({
-    defaultValues,
+    defaultValues: defaultValues,
     mode: 'onChange',
     resolver: yupResolver(schema)
   })
+  console.log(errors);
 
-  const onSubmit = data => {
-    if (store.allData.some(u => u.email === data.email || u.username === data.username)) {
-      store.allData.forEach(u => {
-        if (u.email === data.email) {
-          setError('email', {
-            message: 'Email already exists!'
-          })
-        }
-        if (u.username === data.username) {
-          setError('username', {
-            message: 'Username already exists!'
-          })
-        }
+  // Reset form khi user hoặc open thay đổi (edit)
+  useEffect(() => {
+    if (isEdit && user) {
+      reset({
+        ...defaultValues,
+        ...user,
+        password: '',
+        passwordConfirm: ''
       })
-    } else {
-      dispatch(addUser({ ...data, role, currentPlan: plan }))
-      toggle()
-      reset()
+      setPlan(user.currentPlan || 'basic')
+      setRole(user.role || 'subscriber')
+    } else if (!isEdit && open) {
+      reset(defaultValues)
+      setPlan('basic')
+      setRole('subscriber')
     }
+  }, [user, open, isEdit, reset])
+
+  const handleFormSubmit = data => {
+    if (!isEdit) {
+      if (store.allData.some(u => u.email === data.email || u.username === data.username)) {
+        store.allData.forEach(u => {
+          if (u.email === data.email) {
+            setError('email', {
+              message: 'Email already exists!'
+            })
+          }
+          if (u.username === data.username) {
+            setError('username', {
+              message: 'Username already exists!'
+            })
+          }
+        })
+        return
+      }
+      dispatch(addUser({ ...data, currentPlan: plan }))
+    }
+
+    console.log(user);
+
+    // if (onSubmitProp) {
+    //   const submitData = { ...data, currentPlan: plan }
+    //   if (isEdit && user && user._id) {
+    //     submitData._id = user._id
+    //   }
+    //   onSubmitProp(submitData)
+    // }
+    // dispatch(addUser({ ...data, role, currentPlan: plan }))
+    // toggle()
+    // reset()
   }
 
   const handleClose = () => {
@@ -225,7 +280,7 @@ const SidebarAddUser = props => {
       </Box>
       {/* Form cuộn */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: 6 }}>
-        <form id='add-user-form' onSubmit={handleSubmit(onSubmit)}>
+        <form id='add-user-form' onSubmit={handleSubmit(handleFormSubmit)}>
           <Controller
             name='name'
             control={control}
@@ -298,7 +353,7 @@ const SidebarAddUser = props => {
           <Controller
             name='msisdn'
             control={control}
-            rules={{ required: true, minLength: 11, maxLength: 11 }}
+            rules={{ required: true, minLength: 10, maxLength: 12 }}
             render={({ field: { value, onChange } }) => (
               <CustomTextField
                 fullWidth
@@ -333,7 +388,7 @@ const SidebarAddUser = props => {
           <Controller
             name='billing'
             control={control}
-            render={({ field: { value, onChange } }) => (
+            render={({ field: { value = 'Auto Debit', onChange } }) => (
               <CustomTextField
                 select
                 fullWidth
@@ -354,17 +409,17 @@ const SidebarAddUser = props => {
           />
 
 
-            <RadioGroup row value={avatarInputType} onChange={handleAvatarTypeChange}>
-              <FormControlLabel value='upload' control={<Radio />} label='Upload' />
+            {/* <RadioGroup row value={avatarInputType} onChange={handleAvatarTypeChange}>
+              <FormControlLabel  value='upload' control={<Radio />} label='Upload' />
               <FormControlLabel value='imageLink' control={<Radio />} label='Image Link' />
               <FormControlLabel value='videoLink' control={<Radio />} label='Video' />
             </RadioGroup>
             <Box sx={{ mb: 2 }}>
             <Typography variant='subtitle2' sx={{ mb: 1 }}>
               Avatar Type
-            </Typography>
+            </Typography> */}
             {/* Preview nằm ở đây */}
-            <Box sx={{ mb: 2 }}>
+            {/* <Box sx={{ mb: 2 }}>
               {avatarInputType === 'upload' && (
                 <img
                   src={avatarPreview || '/images/avatars/default.png'}
@@ -392,8 +447,8 @@ const SidebarAddUser = props => {
                   />
                 </Box>
               )}
-            </Box>
-          {avatarInputType === 'upload' && (
+            </Box> */}
+          {/* {avatarInputType === 'upload' && (
             <Controller
               name='avatar'
               control={control}
@@ -451,8 +506,8 @@ const SidebarAddUser = props => {
                 />
               )}
             />
-          )}
-          </Box>
+          )} */}
+          {/* </Box> */}
           {/* <Controller
             name='avatarColor'
             control={control}
@@ -542,21 +597,7 @@ const SidebarAddUser = props => {
               </CustomTextField>
             )}
           /> */}
-          <CustomTextField
-            select
-            fullWidth
-            value={role}
-            sx={{ mb: 4 }}
-            label='Select Role'
-            onChange={e => setRole(e.target.value)}
-            SelectProps={{ value: role, onChange: e => setRole(e.target.value) }}
-          >
-            <MenuItem value='admin'>Admin</MenuItem>
-            <MenuItem value='author'>Author</MenuItem>
-            <MenuItem value='editor'>Editor</MenuItem>
-            <MenuItem value='maintainer'>Maintainer</MenuItem>
-            <MenuItem value='subscriber'>Subscriber</MenuItem>
-          </CustomTextField>
+
 
           <CustomTextField
             select
@@ -588,6 +629,68 @@ const SidebarAddUser = props => {
               />
             )}
           />
+          {!isEdit && (
+            <>
+              <Controller
+                name='password'
+                control={control}
+                rules={{ required: true, minLength: 6 }}
+                render={({ field: { value, onChange } }) => (
+                  <CustomTextField
+                    fullWidth
+                    type={showPassword ? 'text' : 'password'}
+                    value={value}
+                    sx={{ mb: 4 }}
+                    label='Password'
+                    onChange={onChange}
+                    placeholder='Enter Password'
+                    error={Boolean(errors.password)}
+                    {...(errors.password && { helperText: errors.password.message })}
+                    InputProps={{
+                      endAdornment: (
+                        <IconButton
+                          edge='end'
+                          onClick={() => setShowPassword(v => !v)}
+                          tabIndex={-1}
+                        >
+                          <Icon icon={showPassword ? 'tabler:eye-off' : 'tabler:eye'} fontSize='1.25rem' />
+                        </IconButton>
+                      )
+                    }}
+                  />
+                )}
+              />
+              <Controller
+                name='passwordConfirm'
+                control={control}
+                rules={{ required: true, minLength: 6 }}
+                render={({ field: { value, onChange } }) => (
+                  <CustomTextField
+                    fullWidth
+                    type={showPasswordConfirm ? 'text' : 'password'}
+                    value={value}
+                    sx={{ mb: 4 }}
+                    label='Confirm Password'
+                    onChange={onChange}
+                    placeholder='Confirm Password'
+                    error={Boolean(errors.passwordConfirm)}
+                    {...(errors.passwordConfirm && { helperText: errors.passwordConfirm.message })}
+                    InputProps={{
+                      endAdornment: (
+                        <IconButton
+                          edge='end'
+                          onClick={() => setShowPasswordConfirm(v => !v)}
+                          tabIndex={-1}
+                        >
+                          <Icon icon={showPasswordConfirm ? 'tabler:eye-off' : 'tabler:eye'} fontSize='1.25rem' />
+                        </IconButton>
+                      )
+                    }}
+                  />
+                )}
+              />
+            </>
+          )}
         </form>
       </Box>
       {/* Nút bấm cố định */}
@@ -615,4 +718,4 @@ const SidebarAddUser = props => {
   )
 }
 
-export default SidebarAddUser
+export default UserDrawer

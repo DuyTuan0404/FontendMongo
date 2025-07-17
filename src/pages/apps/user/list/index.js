@@ -41,6 +41,7 @@ import axios from 'axios'
 // ** Custom Table Components Imports
 import TableHeader from 'src/views/apps/user/list/TableHeader'
 import AddUserDrawer from 'src/views/apps/user/list/AddUserDrawer'
+import UserDrawer from 'src/views/apps/user/list/AddUserDrawer'
 
 // ** renders client column
 const userRoleObj = {
@@ -74,186 +75,15 @@ const renderClient = row => {
   }
 }
 
-const RowOptions = ({ id }) => {
-  // ** Hooks
-  const dispatch = useDispatch()
-
-  // ** State
-  const [anchorEl, setAnchorEl] = useState(null)
-  const rowOptionsOpen = Boolean(anchorEl)
-
-  const handleRowOptionsClick = event => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleRowOptionsClose = () => {
-    setAnchorEl(null)
-  }
-
-  const handleDelete = () => {
-    dispatch(deleteUser(id))
-    handleRowOptionsClose()
-  }
-
-  return (
-    <>
-      <IconButton size='small' onClick={handleRowOptionsClick}>
-        <Icon icon='tabler:dots-vertical' />
-      </IconButton>
-      <Menu
-        keepMounted
-        anchorEl={anchorEl}
-        open={rowOptionsOpen}
-        onClose={handleRowOptionsClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right'
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right'
-        }}
-        PaperProps={{ style: { minWidth: '8rem' } }}
-      >
-        <MenuItem
-          component={Link}
-          sx={{ '& svg': { mr: 2 } }}
-          href='/apps/user/view/account'
-          onClick={handleRowOptionsClose}
-        >
-          <Icon icon='tabler:eye' fontSize={20} />
-          View
-        </MenuItem>
-        <MenuItem onClick={handleRowOptionsClose} sx={{ '& svg': { mr: 2 } }}>
-          <Icon icon='tabler:edit' fontSize={20} />
-          Edit
-        </MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ '& svg': { mr: 2 } }}>
-          <Icon icon='tabler:trash' fontSize={20} />
-          Delete
-        </MenuItem>
-      </Menu>
-    </>
-  )
-}
-
-const columns = [
-  {
-    flex: 0.25,
-    minWidth: 280,
-    field: 'fullName',
-    headerName: 'User',
-    renderCell: ({ row }) => {
-      const { fullName, email } = row
-
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {renderClient(row)}
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
-            <Typography
-              noWrap
-              component={Link}
-              href='/apps/user/view/account'
-              sx={{
-                fontWeight: 500,
-                textDecoration: 'none',
-                color: 'text.secondary',
-                '&:hover': { color: 'primary.main' }
-              }}
-            >
-              {fullName}
-            </Typography>
-            <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
-              {email}
-            </Typography>
-          </Box>
-        </Box>
-      )
-    }
-  },
-  {
-    flex: 0.15,
-    field: 'role',
-    minWidth: 170,
-    headerName: 'Role',
-    renderCell: ({ row }) => {
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <CustomAvatar
-            skin='light'
-            sx={{ mr: 4, width: 30, height: 30 }}
-            color={userRoleObj[row.role].color || 'primary'}
-          >
-            <Icon icon={userRoleObj[row.role].icon} />
-          </CustomAvatar>
-          <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
-            {row.role}
-          </Typography>
-        </Box>
-      )
-    }
-  },
-  {
-    flex: 0.15,
-    minWidth: 120,
-    headerName: 'Plan',
-    field: 'currentPlan',
-    renderCell: ({ row }) => {
-      return (
-        <Typography noWrap sx={{ fontWeight: 500, color: 'text.secondary', textTransform: 'capitalize' }}>
-          {row.currentPlan}
-        </Typography>
-      )
-    }
-  },
-  {
-    flex: 0.15,
-    minWidth: 190,
-    field: 'billing',
-    headerName: 'Billing',
-    renderCell: ({ row }) => {
-      return (
-        <Typography noWrap sx={{ color: 'text.secondary' }}>
-          {row.billing}
-        </Typography>
-      )
-    }
-  },
-  {
-    flex: 0.1,
-    minWidth: 110,
-    field: 'status',
-    headerName: 'Status',
-    renderCell: ({ row }) => {
-      return (
-        <CustomChip
-          rounded
-          skin='light'
-          size='small'
-          label={row.status}
-          color={userStatusObj[row.status]}
-          sx={{ textTransform: 'capitalize' }}
-        />
-      )
-    }
-  },
-  {
-    flex: 0.1,
-    minWidth: 100,
-    sortable: false,
-    field: 'actions',
-    headerName: 'Actions',
-    renderCell: ({ row }) => <RowOptions id={row.id} />
-  }
-]
-
 const UserList = ({ apiData }) => {
   // ** State
   const [role, setRole] = useState('')
   const [plan, setPlan] = useState('')
   const [value, setValue] = useState('')
   const [status, setStatus] = useState('')
-  const [addUserOpen, setAddUserOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerMode, setDrawerMode] = useState('add') // 'add' hoặc 'edit'
+  const [editUser, setEditUser] = useState(null)
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 })
 
   // ** Hooks
@@ -289,7 +119,196 @@ const UserList = ({ apiData }) => {
   const handleStatusChange = useCallback(e => {
     setStatus(e.target.value)
   }, [])
-  const toggleAddUserDrawer = () => setAddUserOpen(!addUserOpen)
+
+  const handleAddUser = () => {
+    setDrawerMode('add')
+    setEditUser(null)
+    setDrawerOpen(true)
+  }
+
+  const handleEditUser = (user) => {
+    setDrawerMode('edit')
+    setEditUser(user)
+    setDrawerOpen(true)
+  }
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false)
+    setEditUser(null)
+  }
+
+  const RowOptions = ({ id, row, onEdit }) => {
+    // ** Hooks
+    const dispatch = useDispatch()
+
+    // ** State
+    const [anchorEl, setAnchorEl] = useState(null)
+    const rowOptionsOpen = Boolean(anchorEl)
+
+    const handleRowOptionsClick = event => {
+      setAnchorEl(event.currentTarget)
+    }
+
+    const handleRowOptionsClose = () => {
+      setAnchorEl(null)
+    }
+
+    const handleDelete = () => {
+      dispatch(deleteUser(id))
+      handleRowOptionsClose()
+    }
+
+    return (
+      <>
+        <IconButton size='small' onClick={handleRowOptionsClick}>
+          <Icon icon='tabler:dots-vertical' />
+        </IconButton>
+        <Menu
+          keepMounted
+          anchorEl={anchorEl}
+          open={rowOptionsOpen}
+          onClose={handleRowOptionsClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right'
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right'
+          }}
+          PaperProps={{ style: { minWidth: '8rem' } }}
+        >
+          <MenuItem
+            component={Link}
+            sx={{ '& svg': { mr: 2 } }}
+            href='/apps/user/view/account'
+            onClick={handleRowOptionsClose}
+          >
+            <Icon icon='tabler:eye' fontSize={20} />
+            View
+          </MenuItem>
+          <MenuItem onClick={() => { onEdit(row); handleRowOptionsClose(); }} sx={{ '& svg': { mr: 2 } }}>
+            <Icon icon='tabler:edit' fontSize={20} />
+            Edit
+          </MenuItem>
+          <MenuItem onClick={handleDelete} sx={{ '& svg': { mr: 2 } }}>
+            <Icon icon='tabler:trash' fontSize={20} />
+            Delete
+          </MenuItem>
+        </Menu>
+      </>
+    )
+  }
+
+  const columns = [
+    {
+      flex: 0.25,
+      minWidth: 280,
+      field: 'fullName',
+      headerName: 'User',
+      renderCell: ({ row }) => {
+        const { fullName, email } = row
+
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {renderClient(row)}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+              <Typography
+                noWrap
+                component={Link}
+                href='/apps/user/view/account'
+                sx={{
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  color: 'text.secondary',
+                  '&:hover': { color: 'primary.main' }
+                }}
+              >
+                {fullName}
+              </Typography>
+              <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
+                {email}
+              </Typography>
+            </Box>
+          </Box>
+        )
+      }
+    },
+    {
+      flex: 0.15,
+      field: 'role',
+      minWidth: 170,
+      headerName: 'Role',
+      renderCell: ({ row }) => {
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <CustomAvatar
+              skin='light'
+              sx={{ mr: 4, width: 30, height: 30 }}
+              color={userRoleObj[row.role].color || 'primary'}
+            >
+              <Icon icon={userRoleObj[row.role].icon} />
+            </CustomAvatar>
+            <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
+              {row.role}
+            </Typography>
+          </Box>
+        )
+      }
+    },
+    {
+      flex: 0.15,
+      minWidth: 120,
+      headerName: 'Plan',
+      field: 'currentPlan',
+      renderCell: ({ row }) => {
+        return (
+          <Typography noWrap sx={{ fontWeight: 500, color: 'text.secondary', textTransform: 'capitalize' }}>
+            {row.currentPlan}
+          </Typography>
+        )
+      }
+    },
+    {
+      flex: 0.15,
+      minWidth: 190,
+      field: 'billing',
+      headerName: 'Billing',
+      renderCell: ({ row }) => {
+        return (
+          <Typography noWrap sx={{ color: 'text.secondary' }}>
+            {row.billing}
+          </Typography>
+        )
+      }
+    },
+    {
+      flex: 0.1,
+      minWidth: 110,
+      field: 'status',
+      headerName: 'Status',
+      renderCell: ({ row }) => {
+        return (
+          <CustomChip
+            rounded
+            skin='light'
+            size='small'
+            label={row.status}
+            color={userStatusObj[row.status]}
+            sx={{ textTransform: 'capitalize' }}
+          />
+        )
+      }
+    },
+    {
+      flex: 0.1,
+      minWidth: 100,
+      sortable: false,
+      field: 'actions',
+      headerName: 'Actions',
+      renderCell: ({ row }) => <RowOptions id={row.id} row={row} onEdit={handleEditUser} />
+    }
+  ]
 
   return (
     <Grid container spacing={6.5}>
@@ -368,7 +387,7 @@ const UserList = ({ apiData }) => {
             </Grid>
           </CardContent>
           <Divider sx={{ m: '0 !important' }} />
-          <TableHeader value={value} handleFilter={handleFilter} toggle={toggleAddUserDrawer} />
+          <TableHeader value={value} handleFilter={handleFilter} toggle={handleAddUser} />
           <DataGrid
             autoHeight
             rowHeight={62}
@@ -384,7 +403,16 @@ const UserList = ({ apiData }) => {
         </Card>
       </Grid>
 
-      <AddUserDrawer open={addUserOpen} toggle={toggleAddUserDrawer} />
+      <UserDrawer
+        open={drawerOpen}
+        toggle={handleDrawerClose}
+        mode={drawerMode}
+        user={editUser}
+        onSubmit={(data) => {
+          // Xử lý submit edit ở đây nếu cần, ví dụ dispatch(updateUser(data))
+          // Sau khi submit xong, Drawer sẽ tự đóng nhờ handleDrawerClose
+        }}
+      />
     </Grid>
   )
 }

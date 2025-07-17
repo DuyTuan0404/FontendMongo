@@ -14,6 +14,8 @@ export const fetchData = createAsyncThunk('appUsers/fetchData', async params => 
 
 // ** Add User
 export const addUser = createAsyncThunk('appUsers/addUser', async (data, { getState, dispatch }) => {
+  console.log(data);
+
   const response = await axios.post('/apps/users/add-user', {
     data
   })
