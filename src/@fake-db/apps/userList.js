@@ -799,12 +799,24 @@ const projectListData = [
 ]
 
 // POST: Add new user
-mock.onPost('/apps/users/add-user').reply(config => {
+mock.onPost('/apps/users/add-user').reply(async config => {
   // Get event from post data
-  const user = JSON.parse(config.data).data
-  const lastId = Math.max(...data.users.map(u => u.id), 0)
-  user.id = lastId + 1
-  data.users.unshift({ ...user, avatar: '', avatarColor: 'primary', status: 'active' })
+  const data = JSON.parse(config.data).data
+
+  const { data: user } = await axios.post(`user/super-admin/create/admin`, {
+   ...data
+  })
+
+  return [201, { user }]
+})
+
+mock.onPost('/apps/users/update-user').reply(async config => {
+  // Get event from post data
+  const data = JSON.parse(config.data).data
+
+  const { data: user } = await axios.post(`user/super-admin/update/admin/`, {
+   ...data
+  })
 
   return [201, { user }]
 })
