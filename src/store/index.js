@@ -8,6 +8,9 @@ import email from 'src/store/apps/email'
 import invoice from 'src/store/apps/invoice'
 import calendar from 'src/store/apps/calendar'
 import permissions from 'src/store/apps/permissions'
+import city from 'src/store/apps/city'
+import district from 'src/store/apps/district'
+import ward from 'src/store/apps/ward'
 
 export const store = configureStore({
   reducer: {
@@ -16,7 +19,10 @@ export const store = configureStore({
     email,
     invoice,
     calendar,
-    permissions
+    permissions,
+    city,
+    district,
+    ward
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({

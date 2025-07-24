@@ -14,13 +14,19 @@ export const fetchData = createAsyncThunk('appUsers/fetchData', async params => 
 
 // ** Add User
 export const addUser = createAsyncThunk('appUsers/addUser', async (data, { getState, dispatch }) => {
-  console.log(data);
-
-  const response = await axios.post('/apps/users/add-user', {
-    data
+  let formData
+  if (data instanceof FormData) {
+    formData = data
+  } else {
+    formData = new FormData()
+    Object.entries(data).forEach(([key, value]) => {
+      formData.append(key, value)
+    })
+  }
+  const response = await axios.post('/apps/users/add-user', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   })
   dispatch(fetchData(getState().user.params))
-
   return response.data
 })
 

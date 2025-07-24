@@ -90,8 +90,6 @@ const UserList = ({ apiData }) => {
   const dispatch = useDispatch()
   const store = useSelector(state => state.user)
   useEffect(() => {
-    console.log(store);
-
     dispatch(
       fetchData({
         role,
