@@ -11,32 +11,61 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 
-const DialogRespoFullScreen = () => {
-  // ** State
-  const [open, setOpen] = useState(false)
-
+const DialogRespoFullScreen = (props) => {
+  const {
+    open,
+    title,
+    content,
+    onAgree,
+    onClose,
+    agreeText,
+    disagreeText
+  } = props || {}
   // ** Hooks
   const theme = useTheme()
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'))
-  const handleClickOpen = () => setOpen(true)
-  const handleClose = () => setOpen(false)
+  // Support uncontrolled mode when `open` is not provided
+  const [openInternal, setOpenInternal] = useState(false)
+  const isControlled = typeof open !== 'undefined'
+  const dialogOpen = isControlled ? open : openInternal
+
+  const defaultTitle = 'Use Google\'s location service?'
+  const defaultContent = (
+    <DialogContentText>
+      Let Google help apps determine location. This means sending anonymous location data to Google, even when no apps are running.
+    </DialogContentText>
+  )
+  const handleOpen = () => {
+    if (!isControlled) setOpenInternal(true)
+  }
+  const handleClose = () => {
+    if (onClose) onClose()
+    if (!isControlled) setOpenInternal(false)
+  }
+  const handleAgree = () => {
+    if (onAgree) onAgree()
+    if (!isControlled) setOpenInternal(false)
+  }
 
   return (
     <Fragment>
-      <Button variant='outlined' onClick={handleClickOpen}>
-        Open responsive dialog
-      </Button>
-      <Dialog fullScreen={fullScreen} open={open} onClose={handleClose} aria-labelledby='responsive-dialog-title'>
-        <DialogTitle id='responsive-dialog-title'>Use Google's location service?</DialogTitle>
+      {!isControlled && (
+        <Button variant='outlined' onClick={handleOpen}>
+          Open responsive dialog
+        </Button>
+      )}
+      <Dialog fullScreen={fullScreen} open={dialogOpen} onClose={handleClose} aria-labelledby='responsive-dialog-title'>
+        <DialogTitle id='responsive-dialog-title'>{title || defaultTitle}</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Let Google help apps determine location. This means sending anonymous location data to Google, even when no
-            apps are running.
-          </DialogContentText>
+          {typeof content === 'undefined' ? (
+            defaultContent
+          ) : typeof content === 'string' ? (
+            <DialogContentText>{content}</DialogContentText>
+          ) : content}
         </DialogContent>
         <DialogActions className='dialog-actions-dense'>
-          <Button onClick={handleClose}>Disagree</Button>
-          <Button onClick={handleClose}>Agree</Button>
+          <Button onClick={handleClose}>{disagreeText || 'Disagree'}</Button>
+          <Button onClick={handleAgree}>{agreeText || 'Agree'}</Button>
         </DialogActions>
       </Dialog>
     </Fragment>

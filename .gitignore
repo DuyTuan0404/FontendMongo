@@ -11,3 +11,5 @@
 *.pack
 /.next
 *.next
+.next/build-manifest.json
+/.next

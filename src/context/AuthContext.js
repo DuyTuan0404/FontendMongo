@@ -47,16 +47,17 @@ const AuthProvider = ({ children }) => {
             setLoading(false)
             setUser({ ...response.data.userData })
           })
-          // .catch(() => {
-          //   localStorage.removeItem('userData')
-          //   localStorage.removeItem('refreshToken')
-          //   localStorage.removeItem('accessToken')
-          //   setUser(null)
-          //   setLoading(false)
-          //   if (authConfig.onTokenExpiration === 'logout' && !router.pathname.includes('login')) {
-          //     router.replace('/login')
-          //   }
-          // })
+          .catch(() => {
+            localStorage.removeItem('userData')
+            localStorage.removeItem('refreshToken')
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('role')
+            setUser(null)
+            setLoading(false)
+            if (authConfig.onTokenExpiration === 'logout' && !router.pathname.includes('login')) {
+              router.replace('/login')
+            }
+          })
       } else {
         setLoading(false)
       }
@@ -66,6 +67,7 @@ const AuthProvider = ({ children }) => {
   }, [])
 
   const handleLogin = (params, errorCallback) => {
+    setLoading(true)
     axios
       .post(authConfig.loginEndpoint, params)
       .then(async response => {
@@ -73,14 +75,20 @@ const AuthProvider = ({ children }) => {
           ? window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
           : null
         params.rememberMe ? window.localStorage.setItem(authConfig.onTokenExpiration, response.data.refreshToken) : null
+
+         params.rememberMe
+          ? window.localStorage.setItem('role', response.data.userData.role)
+          : null
         const returnUrl = router.query.returnUrl
         setUser({ ...response.data.userData })
         params.rememberMe ? window.localStorage.setItem('userData', JSON.stringify(response.data.userData)) : null
         const redirectURL = returnUrl && returnUrl !== '/' ? returnUrl : '/'
-        router.replace(redirectURL)
+        router.replace('/apps/user/list/')
+        setLoading(false)
       })
       .catch(err => {
         if (errorCallback) errorCallback(err)
+          setLoading(false)
       })
   }
 

@@ -797,21 +797,83 @@ const projectListData = [
     img: '/images/icons/project-icons/html5.png'
   }
 ]
-
+// Hàm lấy userId và userRole an toàn
+const getUserInfo = () => {
+  const userData = localStorage.getItem('userData')
+  if (!userData) return { id: '', role: '' }
+  try {
+    const user = JSON.parse(userData)
+    return { id: user.id || '', role: user.role || '' }
+  } catch {
+    return { id: '', role: '' }
+  }
+}
+const getToken = () => localStorage.getItem('accessToken') || ''
 // POST: Add new user
 mock.onPost('/apps/users/add-user').reply(async config => {
-  // Get event from post data
-  const data = JSON.parse(config.data).data
+   const { role } = getUserInfo();
+  let url = '';
+  if(role == 'super-admin'){
+    url = `user/super-admin/create/admin`;
+  }else if(role == 'admin'){
+    url = `user/admin/create/employee`;
+  }
 
-  const { data: user } = await axios.post(`user/super-admin/create/admin`, {
-   ...data
-  })
 
-  return [201, { user }]
+    // Kiểm tra xem có phải FormData không
+  if (config.data instanceof FormData || config.headers['Content-Type']?.includes('multipart/form-data')) {
+    console.log('Đây là FormData hoặc multipart');
+
+    // Lấy _id từ FormData nếu có
+    let id = null;
+    if (config.data instanceof FormData) {
+      id = config.data.get('_id');
+    }
+
+    if (id) {
+      if(role == 'super-admin'){
+        url = `user/super-admin/update/admin/${id}`;
+      }else if(role == 'admin'){
+        url = `/admin/update/employee/${id}`;
+      }
+
+    }
+
+
+    // Gửi tiếp FormData sang backend
+    const response = await axios.post(url, config.data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return [response.status, response.data];
+  } else {
+    console.log('Đây là JSON data');
+
+    try {
+      const data = JSON.parse(config.data);
+
+      if (data._id) {
+         if(role == 'super-admin'){
+          url = `user/super-admin/update/admin/${data._id}`;
+        }else if(role == 'admin'){
+          url = `/admin/update/employee/${data._id}`;
+        }
+
+      }
+      // Gửi tiếp JSON sang backend
+      const response = await axios.post(url, data);
+      return [response.status, response.data];
+    } catch (e) {
+      console.error('Error parsing JSON:', e);
+      return [400, { error: 'Invalid JSON data' }];
+    }
+  }
 })
 
 mock.onPost('/apps/users/update-user').reply(async config => {
   // Get event from post data
+
   const data = JSON.parse(config.data).data
 
   const { data: user } = await axios.post(`user/super-admin/update/admin/`, {
@@ -825,7 +887,16 @@ mock.onPost('/apps/users/update-user').reply(async config => {
 mock.onGet('/apps/users/list').reply(async config => {
   const { keyword = '', status = null, currentPlan = null, page = 1, limit = 10 } = config.params ?? {}
 
-const { data: user } = await axios.get(`user/super-admin`, {
+  let urlApi = '';
+  const { role } = getUserInfo();
+
+
+  if(role == 'super-admin'){
+    urlApi = `user/super-admin`;
+  }else if(role == 'admin'){
+    urlApi = `user/admin/employee`;
+  }
+const { data: user } = await axios.get(urlApi, {
   params: {
     keyword,
     status,
@@ -875,11 +946,15 @@ if (user.data) {
 })
 
 // DELETE: Deletes User
-mock.onDelete('/apps/users/delete').reply(config => {
+mock.onDelete('/apps/users/delete').reply(async config => {
   // Get user id from URL
-  const userId = config.data
-  const userIndex = data.users.findIndex(t => t.id === userId)
-  data.users.splice(userIndex, 1)
+  const { id, status, note } = JSON.parse(config.data)
+
+  const { data } = await axios.post(`user/super-admin/delete/admin/${id}`, {
+    status,
+    note
+  })
+  console.log('data', data);
 
   return [200]
 })

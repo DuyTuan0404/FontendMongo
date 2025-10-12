@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // ** MUI Imports
 import Drawer from '@mui/material/Drawer'
@@ -55,6 +55,7 @@ const Header = styled(Box)(({ theme }) => ({
 const UserDrawer = props => {
   // ** Props
   const { open, toggle, user, mode = 'add', onSubmit: onSubmitProp } = props
+  console.log(user);
 
   // ** State
   const [plan, setPlan] = useState(user?.currentPlan || 'basic')
@@ -72,7 +73,11 @@ const UserDrawer = props => {
   const cities = useSelector(state => state.city.data)
   const districts = useSelector(state => state.district.data)
   const wards = useSelector(state => state.ward.data)
-
+  // Nếu là edit, lấy defaultValues từ user, nếu không thì dùng defaultValues mặc định
+  const isEdit = mode === 'edit'
+  // Track previous values to detect user-initiated changes
+  const prevCityRef = useRef()
+  const prevDistrictRef = useRef()
   // Khai báo defaultValues ở đầu file, trước mọi hook
   const defaultValues = {
     email: 'tuantruong@gmail.com',
@@ -90,12 +95,14 @@ const UserDrawer = props => {
     city: '6768ddf9447496e1789dfe79',
     district: '6768e5ff22f90677ec400ae4',
     ward: '676902c96d1cfb590c1e2ceb',
-    status: 'active'
+    status: 'active',
+    avatar: '',
+
   }
 
   // Khai báo schema ở đầu file, trước khi khai báo useForm
   const schema = yup.object().shape({
-    company: yup.string().required(),
+
     billing: yup.string().required(),
     email: yup.string().email().required(),
     msisdn: yup
@@ -110,14 +117,22 @@ const UserDrawer = props => {
       .string()
       .min(3, obj => showErrors('Username', obj.value.length, obj.min))
       .required(),
-    password: yup
-      .string()
-      .min(6, 'Password must be at least 6 characters')
-      .required('Password is required'),
-    passwordConfirm: yup
-      .string()
-      .oneOf([yup.ref('password'), null], 'Passwords must match')
-      .required('Please confirm your password'),
+    ...( !isEdit && {
+      password: yup
+        .string()
+        .min(6, 'Password must be at least 6 characters')
+        .required('Password is required'),
+      passwordConfirm: yup
+        .string()
+        .oneOf([yup.ref('password'), null], 'Passwords must match')
+        .required('Please confirm your password'),
+    }),
+    ...(localStorage.getItem('role') === 'super_admin' && {
+        company: yup.string().required(),
+      }),
+
+
+
     status: yup.string().required(),
     city: yup.string().required(),
     district: yup.string().required(),
@@ -153,9 +168,15 @@ const UserDrawer = props => {
       const cityObj = Array.isArray(cities.data) ? cities.data.find(c => (c._id || c.id) === cityValue) : null
       const cityId = cityObj ? cityObj.id : cityValue
       dispatch(fetchDistricts(cityId))
-      setValue('district', '')
-      setValue('ward', '')
+      const prevCity = prevCityRef.current
+      const isUserChangedCity = prevCity !== undefined && prevCity !== cityValue
+      // In edit mode, avoid clearing on initial hydration; clear only on real user changes
+      if (!isEdit || isUserChangedCity) {
+        setValue('district', '')
+        setValue('ward', '')
+      }
     }
+    prevCityRef.current = cityValue
   }, [cityValue, cities.data, dispatch, setValue])
 
   useEffect(() => {
@@ -164,12 +185,15 @@ const UserDrawer = props => {
       const districtObj = Array.isArray(districts.data) ? districts.data.find(d => (d._id || d.id) === districtValue) : null
       const districtId = districtObj ? districtObj.id : districtValue
       dispatch(fetchWards(districtId))
-      setValue('ward', '')
+      const prevDistrict = prevDistrictRef.current
+      const isUserChangedDistrict = prevDistrict !== undefined && prevDistrict !== districtValue
+      // In edit mode, avoid clearing on initial hydration; clear only on real user changes
+      if (!isEdit || isUserChangedDistrict) {
+        setValue('ward', '')
+      }
     }
+    prevDistrictRef.current = districtValue
   }, [districtValue, districts.data, dispatch, setValue])
-
-  // Nếu là edit, lấy defaultValues từ user, nếu không thì dùng defaultValues mặc định
-  const isEdit = mode === 'edit'
 
   // Reset form khi user hoặc open thay đổi (edit)
   useEffect(() => {
@@ -182,18 +206,46 @@ const UserDrawer = props => {
       })
       setPlan(user.currentPlan || 'basic')
       setRole(user.role || 'subscriber')
+
+      // Initialize avatar type/value/preview from user
+      const initialAvatarType = avatarTypeReverseMap?.[user.avatar_type] || 'upload'
+      setAvatarInputType(initialAvatarType)
+
+      if (initialAvatarType === 'imageLink' || initialAvatarType === 'videoLink') {
+        // For link types, keep string in form and manage preview via effect
+        if (typeof user.avatar === 'string') setValue('avatar', user.avatar)
+        setAvatarPreview(initialAvatarType === 'imageLink' && typeof user.avatar === 'string' ? user.avatar : null)
+        setAvatarError('')
+      } else {
+        // For upload type, we cannot prefill a File; show preview if we have a URL/path
+        setValue('avatar', '')
+        if (typeof user.avatar === 'string' && user.avatar) {
+          setAvatarPreview(user.avatar)
+        } else {
+          setAvatarPreview(null)
+        }
+        setAvatarError('')
+      }
     } else if (!isEdit && open) {
       reset(defaultValues)
       setPlan('basic')
       setRole('subscriber')
+      setAvatarInputType('upload')
+      setAvatarPreview(null)
+      setAvatarError('')
     }
-  }, [user, open, isEdit, reset])
+  }, [user, open, isEdit, reset, setValue])
 
   // Ánh xạ avatarInputType sang số
   const avatarTypeMap = {
     upload: 0,
     imageLink: 1,
     videoLink: 2
+  }
+  const avatarTypeReverseMap = {
+    0: 'upload',
+    1: 'imageLink',
+    2: 'videoLink'
   }
 
   const handleFormSubmit = data => {
@@ -202,26 +254,18 @@ const UserDrawer = props => {
       avatar_type: avatarTypeMap[avatarInputType],
       currentPlan: plan
     }
-
-    if (submitData.avatar_type === 0 && submitData.avatar instanceof File) {
-      const formData = new FormData()
-      Object.entries(submitData).forEach(([key, value]) => {
-        formData.append(key, value)
-      })
-      // Log toàn bộ FormData
-
-      dispatch(addUser(formData))
-    } else {
       dispatch(addUser(submitData))
-    }
   }
 
   const handleClose = () => {
+    // Reset form to defaultValues: keep defaults, blank others
+    reset(defaultValues)
     setPlan('basic')
     setRole('subscriber')
-    setValue('contact', Number(''))
+    setAvatarInputType('upload')
+    setAvatarPreview(null)
+    setAvatarError('')
     toggle()
-    reset()
   }
 
   const avatarValue = watch ? watch('avatar') : null
@@ -458,7 +502,7 @@ const UserDrawer = props => {
             <Box sx={{ mb: 2 }}>
               {avatarInputType === 'upload' && (
                 <img
-                  src={avatarPreview || '/images/avatars/default.png'}
+                  src={avatarPreview}
                   alt='Avatar'
                   style={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover' }}
                 />
@@ -524,7 +568,7 @@ const UserDrawer = props => {
               />
             )}
           />
-
+          {localStorage.getItem('role') === 'super_admin' && (
           <Controller
             name='company'
             control={control}
@@ -540,7 +584,8 @@ const UserDrawer = props => {
                 {...(errors.company && { helperText: errors.company.message })}
               />
             )}
-          />
+          />)
+          }
           <Controller
             name='billing'
             control={control}
@@ -645,9 +690,7 @@ const UserDrawer = props => {
               </CustomTextField>
             )}
           />
-
-
-
+          {localStorage.getItem('role') === 'super_admin' && (
           <CustomTextField
             select
             fullWidth
@@ -660,7 +703,7 @@ const UserDrawer = props => {
             <MenuItem value='enterprise'>Enterprise</MenuItem>
             <MenuItem value='team'>Team</MenuItem>
           </CustomTextField>
-
+          )}
           <Controller
             name='note'
             control={control}

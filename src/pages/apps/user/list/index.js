@@ -31,6 +31,7 @@ import CardStatsHorizontalWithDetails from 'src/@core/components/card-statistics
 
 // ** Utils Import
 import { getInitials } from 'src/@core/utils/get-initials'
+import { UPLOADS_URL } from 'src/configs/config'
 
 // ** Actions Imports
 import { fetchData, deleteUser } from 'src/store/apps/user'
@@ -42,6 +43,10 @@ import axios from 'axios'
 import TableHeader from 'src/views/apps/user/list/TableHeader'
 import AddUserDrawer from 'src/views/apps/user/list/AddUserDrawer'
 import UserDrawer from 'src/views/apps/user/list/AddUserDrawer'
+import MuiAvatar from '@mui/material/Avatar'
+import DialogRespoFullScreen from 'src/views/components/dialogs/DialogRespoFullScreen'
+import myAxios from 'src/utils/myAxios'
+
 
 // ** renders client column
 const userRoleObj = {
@@ -49,29 +54,33 @@ const userRoleObj = {
   author: { icon: 'tabler:circle-check', color: 'success' },
   editor: { icon: 'tabler:edit', color: 'info' },
   maintainer: { icon: 'tabler:chart-pie-2', color: 'primary' },
-  subscriber: { icon: 'tabler:user', color: 'warning' }
+  subscriber: { icon: 'tabler:user', color: 'error' },
+  customer: { icon: 'tabler:user', color: 'success' },
+  employee: { icon: 'tabler:user', color: 'primary' },
+  super_admin: { icon: 'tabler:star', color: 'info' },
 }
 
 const userStatusObj = {
   active: 'success',
   pending: 'warning',
-  inactive: 'secondary'
+  inactive: 'error'
 }
 
 // ** renders client column
 const renderClient = row => {
-  if (row.avatar.length) {
+  if(row.avatar && row.avatar_type == 0){
+    return <CustomAvatar src={`${UPLOADS_URL}${row.avatar}`} sx={{ mr: 2.5, width: 38, height: 38 }} />
+  }else if (row.avatar && row.avatar_type == 1) {
     return <CustomAvatar src={row.avatar} sx={{ mr: 2.5, width: 38, height: 38 }} />
-  } else {
-    return (
-      <CustomAvatar
-        skin='light'
-        color={row.avatarColor}
-        sx={{ mr: 2.5, width: 38, height: 38, fontWeight: 500, fontSize: theme => theme.typography.body1.fontSize }}
-      >
-        {getInitials(row.fullName ? row.fullName : 'John Doe')}
-      </CustomAvatar>
-    )
+
+  }{
+    return <CustomAvatar
+    skin='light'
+    color={row.avatarColor}
+    sx={{ mr: 2.5, width: 38, height: 38, fontWeight: 500, fontSize: theme => theme.typography.body1.fontSize }}
+  >
+    {getInitials(row.fullName ? row.fullName : 'John Doe')}
+  </CustomAvatar>
   }
 }
 
@@ -85,6 +94,8 @@ const UserList = ({ apiData }) => {
   const [drawerMode, setDrawerMode] = useState('add') // 'add' hoặc 'edit'
   const [editUser, setEditUser] = useState(null)
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 })
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deletingUser, setDeletingUser] = useState(null)
 
   // ** Hooks
   const dispatch = useDispatch()
@@ -152,7 +163,8 @@ const UserList = ({ apiData }) => {
     }
 
     const handleDelete = () => {
-      dispatch(deleteUser(id))
+      setDeletingUser(row)
+      setConfirmOpen(true)
       handleRowOptionsClose()
     }
 
@@ -238,6 +250,8 @@ const UserList = ({ apiData }) => {
       minWidth: 170,
       headerName: 'Role',
       renderCell: ({ row }) => {
+        console.log(row.role);
+
         return (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <CustomAvatar
@@ -325,6 +339,7 @@ const UserList = ({ apiData }) => {
       </Grid>
       <Grid item xs={12}>
         <Card>
+
           <CardHeader title='Search Filters' />
           <CardContent>
             <Grid container spacing={6}>
@@ -347,24 +362,25 @@ const UserList = ({ apiData }) => {
                   <MenuItem value='subscriber'>Subscriber</MenuItem>
                 </CustomTextField>
               </Grid> */}
-              <Grid item sm={4} xs={12}>
-                <CustomTextField
-                  select
-                  fullWidth
-                  defaultValue='Select Plan'
-                  SelectProps={{
-                    value: plan,
-                    displayEmpty: true,
-                    onChange: e => handlePlanChange(e)
-                  }}
-                >
-                  <MenuItem value=''>Select Plan</MenuItem>
-                  <MenuItem value='basic'>Basic</MenuItem>
-                  <MenuItem value='company'>Company</MenuItem>
-                  <MenuItem value='enterprise'>Enterprise</MenuItem>
-                  <MenuItem value='team'>Team</MenuItem>
-                </CustomTextField>
-              </Grid>
+              { localStorage.getItem('role') === 'super_admin' && (
+                <Grid item sm={4} xs={12}>
+                  <CustomTextField
+                    select
+                    fullWidth
+                    defaultValue='Select Plan'
+                    SelectProps={{
+                      value: plan,
+                      displayEmpty: true,
+                      onChange: e => handlePlanChange(e)
+                    }}
+                  >
+                    <MenuItem value=''>Select Plan</MenuItem>
+                    <MenuItem value='basic'>Basic</MenuItem>
+                    <MenuItem value='premium'>Premium</MenuItem>
+                    <MenuItem value='enterprise'>Enterprise</MenuItem>
+                  </CustomTextField>
+                </Grid>
+              )}
               <Grid item sm={4} xs={12}>
                 <CustomTextField
                   select
@@ -409,6 +425,54 @@ const UserList = ({ apiData }) => {
         onSubmit={(data) => {
           // Xử lý submit edit ở đây nếu cần, ví dụ dispatch(updateUser(data))
           // Sau khi submit xong, Drawer sẽ tự đóng nhờ handleDrawerClose
+        }}
+      />
+
+      <DialogRespoFullScreen
+        open={confirmOpen}
+        title='Xác nhận xóa người dùng'
+        content={
+          deletingUser ? (
+            <Box>
+              Bạn có chắc muốn xóa người dùng: <strong>{deletingUser.fullName}</strong>?
+            </Box>
+          ) : ''
+        }
+        disagreeText='Hủy'
+        agreeText='Đồng ý'
+        onClose={() => {
+          setConfirmOpen(false)
+          setDeletingUser(null)
+        }}
+        onAgree={async () => {
+          try {
+            // Mock: remove from local store immediately
+            if (deletingUser?.id) {
+              const deletePayload = {
+                id: deletingUser.id,
+                status: 'inactive',
+                note: 'SuperAdmin xóa'
+              };
+              dispatch(deleteUser(deletePayload));
+            }
+
+            // Refresh list
+            dispatch(
+              fetchData({
+                role,
+                status,
+                keyword: value,
+                currentPlan: plan,
+                page: paginationModel.page + 1,
+                limit: paginationModel.pageSize
+              })
+            )
+          } catch (e) {
+            // optional: show toast
+          } finally {
+            setConfirmOpen(false)
+            setDeletingUser(null)
+          }
         }}
       />
     </Grid>

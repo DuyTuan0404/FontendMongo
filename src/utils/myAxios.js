@@ -45,6 +45,11 @@ myAxios.interceptors.request.use(
       delete config.headers['userId']
     }
 
+    // Interceptor để tự động đổi Content-Type nếu là FormData
+    if (config.data instanceof FormData) {
+      config.headers['Content-Type'] = 'multipart/form-data; boundary=ExampleBoundaryString'
+    }
+
     return config
   },
   error => Promise.reject(error)

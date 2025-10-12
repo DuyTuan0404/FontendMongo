@@ -43,19 +43,17 @@ mock.onPost('/jwt/login').reply(async request => {
 
   try {
     const { data: user } = await axios.post(`auth/signin`, { email, password })
-    console.log('user:: ', user);
+    console.log(user);
 
     if (user.data) {
       const accessToken = user.data.tokens.accessToken
       const refreshToken = user.data.tokens.refreshToken
-      console.log('user.data:: ', user.data.user);
-
+      
       const response = {
         accessToken,
         refreshToken,
         userData: { ...user.data.user }
       }
-
       return [200, response]
     } else {
       error = {
@@ -129,6 +127,8 @@ mock.onGet('/auth/me').reply(async config => {
     }
     return response
   } catch (err) {
+    console.log(err);
+
     response = [401, { error: { error: 'Invalid User' } }]
     return response
   }

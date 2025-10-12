@@ -51,10 +51,11 @@ const UserDropdown = props => {
 
   useEffect(() => {
     const dataUserId = window.localStorage.getItem('userData')
-    if (dataUserId) {
-      setUser(JSON.parse(dataUserId))
+    const userData = JSON.parse(dataUserId)
+    if (userData) {
+      setUser(userData)
+
     }
-    console.log(user)
   }, [])
 
   const handleDropdownOpen = event => {
@@ -102,7 +103,7 @@ const UserDropdown = props => {
       >
         <Avatar
           alt={user.name ? user.name : 'Admin'}
-          src='/images/avatars/1.png'
+          src={user.avatar ? user.avatar : '/images/avatars/1.png'}
           onClick={handleDropdownOpen}
           sx={{ width: 38, height: 38 }}
         />
@@ -127,13 +128,13 @@ const UserDropdown = props => {
             >
               <Avatar
                 alt={user.name ? user.name : 'Admin'}
-                src='/images/avatars/1.png'
+                src={user.avatar ? user.avatar : '/images/avatars/1.png'}
                 sx={{ width: '2.5rem', height: '2.5rem' }}
               />
             </Badge>
             <Box sx={{ display: 'flex', ml: 2.5, alignItems: 'flex-start', flexDirection: 'column' }}>
-              <Typography sx={{ fontWeight: 500 }}>{user.name ? user.name : 'Admin'}</Typography>
-              <Typography variant='body2'>{user.role ? user.role : 'Admin'}</Typography>
+              <Typography sx={{ fontWeight: 500 }}>{user.full_name ? user.full_name : 'Admin'}</Typography>
+              <Typography variant='body2'>{user.role_name ? user.role_name : 'Admin'}</Typography>
             </Box>
           </Box>
         </Box>

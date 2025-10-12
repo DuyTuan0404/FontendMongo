@@ -4,6 +4,19 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 
 // ** Fetch Users
+
+// Hàm lấy userId và userRole an toàn
+const getUserInfo = () => {
+  const userData = localStorage.getItem('userData')
+  if (!userData) return { id: '', role: '' }
+  try {
+    const user = JSON.parse(userData)
+    return { id: user.id || '', role: user.role || '' }
+  } catch {
+    return { id: '', role: '' }
+  }
+}
+const getToken = () => localStorage.getItem('accessToken') || ''
 export const fetchData = createAsyncThunk('appUsers/fetchData', async params => {
   const response = await axios.get('/apps/users/list', {
     params
@@ -14,28 +27,29 @@ export const fetchData = createAsyncThunk('appUsers/fetchData', async params => 
 
 // ** Add User
 export const addUser = createAsyncThunk('appUsers/addUser', async (data, { getState, dispatch }) => {
-  let formData
-  if (data instanceof FormData) {
-    formData = data
-  } else {
-    formData = new FormData()
+
+    const formData = new FormData()
     Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value)
+        formData.append(key, value)
     })
-  }
+
   const response = await axios.post('/apps/users/add-user', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
   dispatch(fetchData(getState().user.params))
   return response.data
 })
 
 // ** Delete User
-export const deleteUser = createAsyncThunk('appUsers/deleteUser', async (id, { getState, dispatch }) => {
+export const deleteUser = createAsyncThunk('appUsers/deleteUser', async (data, { getState, dispatch }) => {
+  console.log(data);
+
   const response = await axios.delete('/apps/users/delete', {
-    data: id
+    data
   })
-  dispatch(fetchData(getState().user.params))
+    dispatch(fetchData(getState().user.params))
 
   return response.data
 })
