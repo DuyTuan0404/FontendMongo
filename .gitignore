@@ -13,3 +13,7 @@
 *.next
 .next/build-manifest.json
 /.next
+/.next/server
+/.next/server
+/.next
+/.next
