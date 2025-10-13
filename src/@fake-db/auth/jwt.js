@@ -43,12 +43,10 @@ mock.onPost('/jwt/login').reply(async request => {
 
   try {
     const { data: user } = await axios.post(`auth/signin`, { email, password })
-    console.log(user);
-
     if (user.data) {
       const accessToken = user.data.tokens.accessToken
       const refreshToken = user.data.tokens.refreshToken
-      
+
       const response = {
         accessToken,
         refreshToken,
@@ -117,8 +115,6 @@ mock.onGet('/auth/me').reply(async config => {
 
   try {
     const user = await axios.get(`user/me`)
-    console.log(user);
-
     if (user.data) {
       window.localStorage.setItem(defaultAuthConfig.storageTokenKeyName, token)
       response = [200, { userData: { ...user.data, role: 'admin' } }]

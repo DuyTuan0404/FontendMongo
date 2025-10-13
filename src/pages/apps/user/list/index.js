@@ -137,6 +137,8 @@ const UserList = ({ apiData }) => {
 
   const handleEditUser = (user) => {
     setDrawerMode('edit')
+    console.log(user);
+
     setEditUser(user)
     setDrawerOpen(true)
   }
@@ -202,8 +204,9 @@ const UserList = ({ apiData }) => {
             Edit
           </MenuItem>
           <MenuItem onClick={handleDelete} sx={{ '& svg': { mr: 2 } }}>
-            <Icon icon='tabler:trash' fontSize={20} />
-            Delete
+           {row.status === 'inactive' ? <Icon icon='tabler:circle' fontSize={20} /> : <Icon icon='tabler:trash' fontSize={20} />  }
+
+            {row.status === 'inactive' ? 'Activate' : 'Delete'  }
           </MenuItem>
         </Menu>
       </>
@@ -239,7 +242,30 @@ const UserList = ({ apiData }) => {
               <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
                 {email}
               </Typography>
+
             </Box>
+          </Box>
+        )
+      }
+    },
+    {
+      flex: 0.15,
+      field: 'msisdn',
+      minWidth: 170,
+      headerName: 'Phone',
+      renderCell: ({ row }) => {
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <CustomAvatar
+              skin='light'
+              sx={{ mr: 4, width: 30, height: 30 }}
+              color={userRoleObj[row.role].color || 'primary'}
+            >
+              <Icon icon="tabler:phone" />
+            </CustomAvatar>
+            <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
+              {row.msisdn}
+            </Typography>
           </Box>
         )
       }
@@ -250,8 +276,6 @@ const UserList = ({ apiData }) => {
       minWidth: 170,
       headerName: 'Role',
       renderCell: ({ row }) => {
-        console.log(row.role);
-
         return (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <CustomAvatar
@@ -262,7 +286,7 @@ const UserList = ({ apiData }) => {
               <Icon icon={userRoleObj[row.role].icon} />
             </CustomAvatar>
             <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
-              {row.role}
+              {row.role_name}
             </Typography>
           </Box>
         )
@@ -282,18 +306,19 @@ const UserList = ({ apiData }) => {
       }
     },
     {
-      flex: 0.15,
-      minWidth: 190,
-      field: 'billing',
-      headerName: 'Billing',
+      flex: 0.2,
+      minWidth: 350,
+      headerName: 'Address',
+      field: 'city',
       renderCell: ({ row }) => {
         return (
-          <Typography noWrap sx={{ color: 'text.secondary' }}>
-            {row.billing}
+          <Typography noWrap sx={{ color: 'text.secondary', textTransform: 'capitalize', wordBreak: 'break-word' }}>
+            {row.ward?.name || 'N/A'}, {row.district?.name || 'N/A'}, {row.city?.name || 'N/A'}
           </Typography>
         )
       }
     },
+
     {
       flex: 0.1,
       minWidth: 110,
@@ -376,8 +401,9 @@ const UserList = ({ apiData }) => {
                   >
                     <MenuItem value=''>Select Plan</MenuItem>
                     <MenuItem value='basic'>Basic</MenuItem>
-                    <MenuItem value='premium'>Premium</MenuItem>
+                    <MenuItem value='company'>Company</MenuItem>
                     <MenuItem value='enterprise'>Enterprise</MenuItem>
+                    <MenuItem value='team'>Team</MenuItem>
                   </CustomTextField>
                 </Grid>
               )}
@@ -434,7 +460,7 @@ const UserList = ({ apiData }) => {
         content={
           deletingUser ? (
             <Box>
-              Bạn có chắc muốn xóa người dùng: <strong>{deletingUser.fullName}</strong>?
+              Bạn có chắc muốn {deletingUser.status === 'inactive' ? 'kích hoạt' : 'xoá'} người dùng: <strong>{deletingUser.fullName}</strong>?
             </Box>
           ) : ''
         }
@@ -450,7 +476,7 @@ const UserList = ({ apiData }) => {
             if (deletingUser?.id) {
               const deletePayload = {
                 id: deletingUser.id,
-                status: 'inactive',
+                status: deletingUser.status === 'inactive' ? 'active' : 'inactive',
                 note: 'SuperAdmin xóa'
               };
               dispatch(deleteUser(deletePayload));

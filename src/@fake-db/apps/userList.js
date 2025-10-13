@@ -813,7 +813,7 @@ const getToken = () => localStorage.getItem('accessToken') || ''
 mock.onPost('/apps/users/add-user').reply(async config => {
    const { role } = getUserInfo();
   let url = '';
-  if(role == 'super-admin'){
+  if(role == 'super_admin'){
     url = `user/super-admin/create/admin`;
   }else if(role == 'admin'){
     url = `user/admin/create/employee`;
@@ -831,10 +831,10 @@ mock.onPost('/apps/users/add-user').reply(async config => {
     }
 
     if (id) {
-      if(role == 'super-admin'){
+      if(role == 'super_admin'){
         url = `user/super-admin/update/admin/${id}`;
       }else if(role == 'admin'){
-        url = `/admin/update/employee/${id}`;
+        url = `user/admin/update/employee/${id}`;
       }
 
     }
@@ -854,7 +854,7 @@ mock.onPost('/apps/users/add-user').reply(async config => {
       const data = JSON.parse(config.data);
 
       if (data._id) {
-         if(role == 'super-admin'){
+         if(role == 'super_admin'){
           url = `user/super-admin/update/admin/${data._id}`;
         }else if(role == 'admin'){
           url = `/admin/update/employee/${data._id}`;
@@ -891,7 +891,7 @@ mock.onGet('/apps/users/list').reply(async config => {
   const { role } = getUserInfo();
 
 
-  if(role == 'super-admin'){
+  if(role == 'super_admin'){
     urlApi = `user/super-admin`;
   }else if(role == 'admin'){
     urlApi = `user/admin/employee`;
@@ -928,35 +928,28 @@ if (user.data) {
     }
   ]
 }
-
-  // // ** Default response
-  // const dataProfile = await fetch(`${API_BACKEND}user/admin/employee`, {
-  //   method: 'GET',
-  //   headers: {
-  //     'Content-Type': 'application/json; charset=utf-8',
-  //     'x-api-key': X_API_KEY,
-  //     'x-client-id': user_id,
-  //     'authorization-v2': token
-  //   }
-  // })
-
-  // const users = await dataProfile.json()
-
-
 })
 
 // DELETE: Deletes User
 mock.onDelete('/apps/users/delete').reply(async config => {
   // Get user id from URL
   const { id, status, note } = JSON.parse(config.data)
+  let url = '';
+  let noteDeleted = '';
+  const { role } = getUserInfo();
+  if(role == 'super-admin'){
+    url = `user/super-admin/delete/admin/${id}`;
+    noteDeleted = note;
+  }else if(role == 'admin'){
+    url = `user/admin/delete/employee/${id}`;
+    noteDeleted = 'Deleted by admin';
+  }
 
-  const { data } = await axios.post(`user/super-admin/delete/admin/${id}`, {
+  const { data } = await axios.post(url, {
     status,
-    note
+    note: noteDeleted
   })
-  console.log('data', data);
-
-  return [200]
+  return [200, data]
 })
 
 // GET: DATA

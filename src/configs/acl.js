@@ -1,3 +1,4 @@
+'use strict'
 import { AbilityBuilder, Ability } from '@casl/ability'
 
 export const AppAbility = Ability
@@ -9,9 +10,9 @@ export const AppAbility = Ability
  */
 const defineRulesFor = (role, subject) => {
   const { can, rules } = new AbilityBuilder(AppAbility)
-  if (role === 'admin') {
+  if (role === 'admin' || role === 'super-admin' || role === 'employee') {
     can('manage', 'all')
-  } else if (role === 'employee') {
+  } else if (role === 'customer') {
     can(['read'], 'acl-page')
   } else {
     can(['read', 'create', 'update', 'delete'], subject)

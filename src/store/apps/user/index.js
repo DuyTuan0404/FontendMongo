@@ -44,8 +44,6 @@ export const addUser = createAsyncThunk('appUsers/addUser', async (data, { getSt
 
 // ** Delete User
 export const deleteUser = createAsyncThunk('appUsers/deleteUser', async (data, { getState, dispatch }) => {
-  console.log(data);
-
   const response = await axios.delete('/apps/users/delete', {
     data
   })
