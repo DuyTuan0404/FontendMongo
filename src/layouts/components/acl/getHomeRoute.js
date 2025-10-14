@@ -3,6 +3,7 @@
  */
 const getHomeRoute = role => {
   if (role === 'customer ') return '/acl'
+  else if (role === 'employee') return '/apps/customer/list'
   else return '/apps/user/list'
 }
 

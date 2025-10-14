@@ -715,7 +715,14 @@ const searchData = [
     icon: 'tabler:shield',
     title: 'Access Control (ACL)',
     category: 'chartsMisc'
-  }
+  },
+  {
+    id: 103,
+    url: '/apps/customer/list',
+    icon: 'tabler:users',
+    title: 'Customer List',
+    category: 'appsPages'
+  },
 ]
 
 // ** GET Search Data

@@ -83,7 +83,7 @@ const AuthProvider = ({ children }) => {
         setUser({ ...response.data.userData })
         params.rememberMe ? window.localStorage.setItem('userData', JSON.stringify(response.data.userData)) : null
         const redirectURL = returnUrl && returnUrl !== '/' ? returnUrl : '/'
-        router.replace('/apps/user/list/')
+        router.replace(redirectURL)
         setLoading(false)
       })
       .catch(err => {

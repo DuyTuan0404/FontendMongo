@@ -22,6 +22,7 @@ import { useSettings } from 'src/@core/hooks/useSettings'
 const UserLayout = ({ children, contentHeightFixed }) => {
   // ** Hooks
   const { settings, saveSettings } = useSettings()
+  const role = typeof window !== 'undefined' ? localStorage.getItem('role') : null
 
   // ** Vars for server side navigation
   // const { menuItems: verticalMenuItems } = ServerSideVerticalNavItems()
@@ -39,6 +40,18 @@ const UserLayout = ({ children, contentHeightFixed }) => {
     settings.layout = 'vertical'
   }
 
+  const verticalNavItems = VerticalNavItems()
+
+  const filteredVerticalNavItems = verticalNavItems.filter(item => {
+    if (item.permission) {
+      if (Array.isArray(item.permission)) {
+        return item.permission.includes(role)
+      }
+      return item.permission === role
+    }
+    return true
+  })
+
   return (
     <Layout
       hidden={hidden}
@@ -47,7 +60,7 @@ const UserLayout = ({ children, contentHeightFixed }) => {
       contentHeightFixed={contentHeightFixed}
       verticalLayoutProps={{
         navMenu: {
-          navItems: VerticalNavItems()
+          navItems: filteredVerticalNavItems
 
           // Uncomment the below line when using server-side menu in vertical layout and comment the above line
           // navItems: verticalMenuItems
@@ -78,7 +91,7 @@ const UserLayout = ({ children, contentHeightFixed }) => {
       })}
     >
       {children}
-      
+
     </Layout>
   )
 }

@@ -64,6 +64,7 @@ const navigation = [
           }
         ]
       },
+
       {
         title: 'User',
         icon: 'tabler:user',
@@ -98,6 +99,12 @@ const navigation = [
             ]
           }
         ]
+      },
+      {
+        title: 'Customer',
+        icon: 'tabler:user',
+        path: '/apps/customer/list',
+        permission: ['admin', 'employee']
       },
       {
         title: 'Roles & Permissions',

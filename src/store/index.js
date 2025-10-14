@@ -11,6 +11,7 @@ import permissions from 'src/store/apps/permissions'
 import city from 'src/store/apps/city'
 import district from 'src/store/apps/district'
 import ward from 'src/store/apps/ward'
+import customer from 'src/store/apps/customer'
 
 export const store = configureStore({
   reducer: {
@@ -22,7 +23,8 @@ export const store = configureStore({
     permissions,
     city,
     district,
-    ward
+    ward,
+    customer
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({

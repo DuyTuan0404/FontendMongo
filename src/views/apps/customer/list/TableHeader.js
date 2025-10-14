@@ -1,6 +1,6 @@
 // ** MUI Imports
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 
 // ** Custom Component Import
 import CustomTextField from 'src/@core/components/mui/text-field'
@@ -32,13 +32,13 @@ const TableHeader = props => {
         <CustomTextField
           value={value}
           sx={{ mr: 4 }}
-          placeholder='Search User'
+          placeholder='Search Customer'
           onChange={e => handleFilter(e.target.value)}
         />
 
         <Button onClick={toggle} variant='contained' sx={{ '& svg': { mr: 2 } }}>
           <Icon fontSize='1.125rem' icon='tabler:plus' />
-          Add New User
+          Add New Customer
         </Button>
       </Box>
     </Box>

@@ -54,7 +54,12 @@ const defaultSuggestionsData = [
         icon: 'tabler:users',
         suggestion: 'User List',
         link: '/apps/user/list'
-      }
+      },
+       {
+        icon: 'tabler:users',
+        suggestion: 'Customer List',
+        link: '/apps/customer/list'
+      },
     ]
   },
   {

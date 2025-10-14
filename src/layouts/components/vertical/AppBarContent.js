@@ -81,6 +81,12 @@ const shortcuts = [
     subtitle: 'Manage Users'
   },
   {
+    title: 'Customer App',
+    icon: 'tabler:users',
+    url: '/apps/customer/list',
+    subtitle: 'Manage Customers'
+  },
+  {
     url: '/apps/roles',
     icon: 'tabler:lock',
     subtitle: 'Permissions',
