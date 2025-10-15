@@ -4,19 +4,6 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import axios from 'axios'
 
 // ** Fetch Users
-
-// Hàm lấy userId và userRole an toàn
-const getUserInfo = () => {
-  const userData = localStorage.getItem('userData')
-  if (!userData) return { id: '', role: '' }
-  try {
-    const user = JSON.parse(userData)
-    return { id: user.id || '', role: user.role || '' }
-  } catch {
-    return { id: '', role: '' }
-  }
-}
-const getToken = () => localStorage.getItem('accessToken') || ''
 export const fetchData = createAsyncThunk('appUsers/fetchData', async params => {
   const response = await axios.get('/apps/users/list', {
     params

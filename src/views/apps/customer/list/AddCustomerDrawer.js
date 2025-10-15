@@ -262,6 +262,7 @@ const CustomerDrawer = props => {
       currentPlan: plan
     }
       dispatch(addCustomer(submitData))
+      handleClose()
   }
 
   const handleClose = () => {

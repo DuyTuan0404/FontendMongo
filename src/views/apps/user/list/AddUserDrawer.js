@@ -256,12 +256,16 @@ const UserDrawer = props => {
   }
 
   const handleFormSubmit = data => {
+    k
     const submitData = {
       ...data,
       avatar_type: avatarTypeMap[avatarInputType],
       currentPlan: plan
     }
-      dispatch(addUser(submitData))
+    dispatch(addUser(submitData))
+    handleClose()
+
+
   }
 
   const handleClose = () => {

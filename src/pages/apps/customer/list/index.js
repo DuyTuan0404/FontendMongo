@@ -42,6 +42,7 @@ import axios from 'axios'
 // ** Custom Table Components Imports
 import TableHeader from 'src/views/apps/customer/list/TableHeader'
 import AddCustomerDrawer from 'src/views/apps/customer/list/AddCustomerDrawer'
+import DialogRespoFullScreen from 'src/views/components/dialogs/DialogRespoFullScreen'
 
 // ** renders client column
 const customerRoleObj = {
@@ -91,6 +92,8 @@ const CustomerList = ({ apiData }) => {
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 })
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deletingCustomer, setDeletingCustomer] = useState(null)
+
+  console.log(123123);
 
   // ** Hooks
   const dispatch = useDispatch()
@@ -213,7 +216,7 @@ const CustomerList = ({ apiData }) => {
       field: 'fullName',
       headerName: 'Customer',
       renderCell: ({ row }) => {
-        const { fullName, email } = row
+        const { fullName, email, user_created } = row
 
         return (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -235,7 +238,11 @@ const CustomerList = ({ apiData }) => {
               <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
                 {email}
               </Typography>
-
+               <Typography noWrap variant='body2' sx={{ color: 'text.disabled' }}>
+               <Typography variant='body2' sx={{ color: 'text.disabled' }}>
+                Created by: {user_created?.fullName}
+               </Typography>
+              </Typography>
             </Box>
           </Box>
         )
@@ -428,6 +435,52 @@ const CustomerList = ({ apiData }) => {
         }}
       />
 
+      <DialogRespoFullScreen
+        open={confirmOpen}
+        title='Xác nhận xóa khách hàng'
+        content={
+          deletingCustomer ? (
+            <Box>
+              Bạn có chắc muốn {deletingCustomer.status === 'inactive' ? 'kích hoạt' : 'xoá'} khách hàng: <strong>{deletingCustomer.fullName}</strong>?
+            </Box>
+          ) : ''
+        }
+        disagreeText='Hủy'
+        agreeText='Đồng ý'
+        onClose={() => {
+          setConfirmOpen(false)
+          setDeletingCustomer(null)
+        }}
+        onAgree={async () => {
+          try {
+            if (deletingCustomer?.id) {
+              const deletePayload = {
+                id: deletingCustomer.id,
+                status: deletingCustomer.status === 'inactive' ? 'active' : 'inactive',
+                note: 'SuperAdmin xóa'
+              };
+              dispatch(deleteCustomer(deletePayload));
+            }
+
+            // Refresh list
+            dispatch(
+              fetchData({
+                role,
+                status,
+                keyword: value,
+                currentPlan: plan,
+                page: paginationModel.page + 1,
+                limit: paginationModel.pageSize
+              })
+            )
+          } catch (e) {
+            // optional: show toast
+          } finally {
+            setConfirmOpen(false)
+            setDeletingCustomer(null)
+          }
+        }}
+      />
     </Grid>
   )
 }

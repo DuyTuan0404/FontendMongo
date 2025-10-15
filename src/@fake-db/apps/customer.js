@@ -810,13 +810,13 @@ const getUserInfo = () => {
 }
 const getToken = () => localStorage.getItem('accessToken') || ''
 // POST: Add new user
-mock.onPost('/apps/customers/add-user').reply(async config => {
+mock.onPost('/apps/customers/add-customer').reply(async config => {
    const { role } = getUserInfo();
   let url = '';
-  if(role == 'super_admin'){
-    url = `user/super-admin/create/admin`;
-  }else if(role == 'admin'){
-    url = `user/admin/create/employee`;
+  if(role == 'admin'){
+    url = `user/admin/create/customer`;
+  }else if(role == 'employee'){
+    url = `user/employee/create/customer`;
   }
 
 
@@ -831,10 +831,10 @@ mock.onPost('/apps/customers/add-user').reply(async config => {
     }
 
     if (id) {
-      if(role == 'super_admin'){
-        url = `user/super-admin/update/admin/${id}`;
-      }else if(role == 'admin'){
-        url = `user/admin/update/employee/${id}`;
+      if(role == 'admin'){
+        url = `user/admin/update/customer/${id}`;
+      }else if(role == 'employee'){
+        url = `user/employee/update/customer/${id}`;
       }
 
     }
@@ -854,10 +854,10 @@ mock.onPost('/apps/customers/add-user').reply(async config => {
       const data = JSON.parse(config.data);
 
       if (data._id) {
-         if(role == 'super_admin'){
-          url = `user/super-admin/update/admin/${data._id}`;
-        }else if(role == 'admin'){
-          url = `/admin/update/employee/${data._id}`;
+         if(role == 'admin'){
+          url = `user/admin/update/customer/${data._id}`;
+        }else if(role == 'employee'){
+          url = `/employee/update/customer/${data._id}`;
         }
 
       }
@@ -871,7 +871,7 @@ mock.onPost('/apps/customers/add-user').reply(async config => {
   }
 })
 
-mock.onPost('/apps/customers/update-user').reply(async config => {
+mock.onPost('/apps/customers/update-customer').reply(async config => {
   // Get event from post data
 
   const data = JSON.parse(config.data).data
@@ -891,10 +891,10 @@ mock.onGet('/apps/customers/list').reply(async config => {
   const { role } = getUserInfo();
 
 
-  if(role == 'super_admin'){
-    urlApi = `user/super-admin`;
-  }else if(role == 'admin'){
-    urlApi = `user/admin/employee`;
+  if(role == 'admin'){
+    urlApi = `user/admin/customer`;
+  }else if(role == 'employee'){
+    urlApi = `user/employee/customer`;
   }
 const { data: user } = await axios.get(urlApi, {
   params: {
@@ -911,8 +911,8 @@ if (user.data) {
   return [
     200,
     {
-      allData:userData.customers,
-      customers: userData.customers,
+      allData:userData.users,
+      customers: userData.users,
       params: config.params,
       total: userData.total
     }
@@ -937,12 +937,12 @@ mock.onDelete('/apps/customers/delete').reply(async config => {
   let url = '';
   let noteDeleted = '';
   const { role } = getUserInfo();
-  if(role == 'super-admin'){
-    url = `user/super-admin/delete/admin/${id}`;
+  if(role == 'admin'){
+    url = `user/admin/delete/customer/${id}`;
     noteDeleted = note;
-  }else if(role == 'admin'){
-    url = `user/admin/delete/employee/${id}`;
-    noteDeleted = 'Deleted by admin';
+  }else if(role == 'employee'){
+    url = `user/employee/delete/customer/${id}`;
+    noteDeleted = 'Deleted by employee';
   }
 
   const { data } = await axios.post(url, {

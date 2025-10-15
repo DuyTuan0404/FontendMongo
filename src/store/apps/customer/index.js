@@ -8,7 +8,6 @@ export const fetchData = createAsyncThunk('appCustomers/fetchData', async params
   const response = await axios.get('/apps/customers/list', {
     params
   })
-
   return response.data
 })
 
@@ -34,6 +33,7 @@ export const deleteCustomer = createAsyncThunk('appCustomers/deleteCustomer', as
     data
   })
   dispatch(fetchData(getState().customer.params))
+  console.log(response.data);
 
   return response.data
 })
